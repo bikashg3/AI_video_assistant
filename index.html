@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Assistant</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Heroicons -->
+    <script src="https://unpkg.com/heroicons@2.0.13/dist/heroicons.min.js" defer></script>
+    <!-- Tippy.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+    <!-- Tippy.js -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <!-- Gradio Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 font-roboto flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-8 relative">
+        <h1 class="text-4xl font-bold text-blue-600 mb-4 text-center">AI Video Assistant</h1>
+        <div id="responseTime" class="text-gray-600 mb-6 text-center">Latency: 0ms</div>
+
+              <!-- Webcam Integration -->
+        <center><div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Webcam Feed</h2>
+            <video id="webcam" autoplay playsinline class="w-full max-w-md rounded-lg shadow"></video>
+        </div>
+        </center>
+        
+        <!-- Indicators -->
+        <div class="flex justify-center space-x-8 mb-6" style="margin-top: 30px;">
+            <!-- User Indicator -->
+            <div id="userIndicator" class="flex items-center bg-blue-500 text-white px-4 py-2 rounded-full space-x-2">
+                <!-- User Icon -->
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>User: Idle</span>
+            </div>
+            <!-- AI Indicator -->
+            <div id="aiIndicator" class="flex items-center bg-yellow-500 text-white px-4 py-2 rounded-full space-x-2">
+                <!-- AI Icon -->
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+                <span>AI: Idle</span>
+            </div>
+        </div>
+        
+        <!-- Start Listening Button -->
+        <button id="startStopButton" class="flex items-center mx-auto bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold py-3 px-6 rounded-full shadow transition transform hover:-translate-y-1">
+            <!-- Mic Icon -->
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+            Start Listening
+        </button>
+        
+        <!-- Settings -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+            <!-- Voice Selection -->
+            <div class="relative">
+                <label for="voiceSelect" class="block text-gray-700 font-semibold mb-2">Voice:</label>
+                <select id="voiceSelect" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="Amy">Female</option>
+                    <option value="Brian">Male</option>
+                </select>
+                <span class="tooltip" data-tippy-content="Select the voice type for the assistant."></span>
+            </div>
+            
+            <!-- Model Selection -->
+            <div class="relative">
+                <label for="modelSelect" class="block text-gray-700 font-semibold mb-2">Model:</label>
+                <select id="modelSelect" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                    <option value="8b">Fastest</option>
+                    <option value="70b">Powerful</option>
+                </select>
+                <span class="tooltip" data-tippy-content="Choose the model based on speed or power."></span>
+            </div>
+            
+            <!-- API Key Input -->
+            <div class="relative">
+                <label for="apiKey" class="block text-gray-700 font-semibold mb-2">SambaNava API Key (optional):</label>
+                <input type="password" id="apiKey" placeholder="Enter your API Key" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <span class="tooltip" data-tippy-content="Use SambaNova API key for enhanced speed. You can obtain a free key from <a href='https://cloud.sambanova.ai/apis' class='text-teal-400 underline' target='_blank'>https://cloud.sambanova.ai/apis</a>."></span>
+            </div>
+        </div>
+        
+        <!-- Transcript Section -->
+        <div id="transcript" class="mt-8 bg-gray-100 rounded-lg p-4 h-48 overflow-y-auto text-sm font-mono shadow-inner">
+            <!-- Transcript content will appear here -->
+        </div>
+        
+    </div>
+    
+    <!-- Custom Script -->
+    <script>
+        // Load appropriate script based on browser and device
+        function loadScript() {
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor) && !/Edg/.test(navigator.userAgent);
+            const isDesktop = window.innerWidth > 768;
+            let scriptSrc;
+            if (isChrome && isDesktop) {
+                scriptSrc = 'script1.js';
+            } else {
+                scriptSrc = 'script2.js';
+            }
+            
+            const existingScript = document.querySelector('script[data-custom="true"]');
+            if (existingScript) {
+                existingScript.remove();
+            }
+            
+            const script = document.createElement('script');
+            script.src = scriptSrc;
+            script.type = 'module';
+            script.async = true;
+            script.setAttribute('data-custom', 'true');
+            script.onerror = () => console.error('Error loading script:', scriptSrc);
+            document.body.appendChild(script);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadScript();
+            
+            // Initialize Tippy.js tooltips
+            tippy('.tooltip', {
+                allowHTML: true,
+                theme: 'light-border',
+                placement: 'top',
+            });
+        });
+    </script>
+</body>
+</html>

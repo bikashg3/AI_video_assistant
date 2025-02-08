@@ -1,0 +1,6 @@
+fastapi
+starlette
+python-multipart
+uvicorn
+aiohttp
+apscheduler
